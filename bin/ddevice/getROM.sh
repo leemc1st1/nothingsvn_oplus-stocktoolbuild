@@ -1,0 +1,128 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-3.0
+
+baserom="$1"
+work_dir=$(pwd)
+source $work_dir/functions.sh
+rm -rf $work_dir/out
+rm -rf $work_dir/build
+
+if [[ "$baserom" == *"downloadCheck"* ]]; then
+    echo "[+] Found Oplus A16+ ota link! Decryption..."
+    MAX_RETRIES=5
+    RETRY_DELAY=3
+    DECRYPT_SUCCESS=0
+
+    for attempt in $(seq 1 $MAX_RETRIES); do
+        echo "[*] Attempt $attempt/$MAX_RETRIES..."
+        DATA=$(python3 <<END | xargs
+import requests
+import sys
+
+url = "$baserom"
+headers = {
+    "User-Agent": "okhttp/3.12.12",
+    "Accept": "*/*",
+    "Accept-Encoding": "gzip, deflate",
+    "Connection": "Keep-Alive",
+    "Cache-Control": "no-cache",
+    "userId": "oplus-ota|16002018",
+}
+
+try:
+    r = requests.get(
+        url, 
+        headers=headers, 
+        allow_redirects=True, 
+        timeout=15, 
+        stream=True
+    )
+    
+    final_url = r.url
+    content_type = r.headers.get("Content-Type", "").lower()
+    content_length = int(r.headers.get("Content-Length", "0") or 0)
+
+    if (("text/html" in content_type or "application/json" in content_type) and content_length < 1024):
+        sys.exit(1)
+
+    if final_url == url:
+        sys.exit(1)
+
+    print(final_url)
+except Exception as e:
+    print(f"DEBUG_ERR: {e}", file=sys.stderr)
+    sys.exit(1)
+END
+)
+
+        if [ $? -eq 0 ] && [ ! -z "$DATA" ]; then
+            baserom="$DATA"
+            DECRYPT_SUCCESS=1
+            green "[+] Decryption successful on attempt $attempt!"
+            break
+        else
+            if [ $attempt -lt $MAX_RETRIES ]; then
+                echo "[-] Attempt $attempt failed. Retrying in ${RETRY_DELAY}s..."
+                sleep $RETRY_DELAY
+            fi
+        fi
+    done
+
+    if [ $DECRYPT_SUCCESS -eq 0 ]; then
+        error "[-] Error: Could not decrypt OTA link after $MAX_RETRIES attempts."
+        exit 1
+    fi
+fi
+
+if [ ! -f "${baserom}" ] && [[ "$baserom" == http* ]]; then
+    blue "Download link detected, starting a download..."
+
+    if [[ "$baserom" == *"drive.google.com"* ]] || [[ "$baserom" == *"drive.usercontent.google.com"* ]]; then
+        blue "[+] Google Drive link detected, using gdown..."
+        if ! command -v gdown &>/dev/null; then
+            echo "[*] gdown not found, installing..."
+            pip3 install gdown --quiet
+        fi
+
+        # Extract file ID from Google Drive URL
+        GDRIVE_ID=""
+        re_filed='/file/d/([a-zA-Z0-9_-]+)'
+        re_idparam='[?&]id=([a-zA-Z0-9_-]+)'
+        if [[ "$baserom" =~ $re_filed ]]; then
+            GDRIVE_ID="${BASH_REMATCH[1]}"
+        elif [[ "$baserom" =~ $re_idparam ]]; then
+            GDRIVE_ID="${BASH_REMATCH[1]}"
+        fi
+
+        if [ -z "$GDRIVE_ID" ]; then
+            error "[-] Could not extract file ID from Google Drive link."
+            exit 1
+        fi
+
+        echo "[*] Google Drive file ID: $GDRIVE_ID"
+        gdown "$GDRIVE_ID" -O oplusrom.zip
+    else
+        aria2c --max-download-limit=1024M --file-allocation=none --summary-interval=10 \
+               -x16 -s16 -j5 -o oplusrom.zip "${baserom}"
+    fi
+
+    baserom="$work_dir/oplusrom.zip"
+
+    if [ ! -f "${baserom}" ]; then
+        error "Download error!"
+        exit 1
+    fi
+
+    # Check if the downloaded file is too small (likely an error page)
+    FILE_SIZE=$(stat -c%s "${baserom}" 2>/dev/null || stat -f%z "${baserom}" 2>/dev/null)
+    if [ "$FILE_SIZE" -lt 1048576 ]; then
+        error "[-] Downloaded file is too small (${FILE_SIZE} bytes). Likely a failed download."
+        rm -f "${baserom}"
+        exit 1
+    fi
+elif [ -f "${baserom}" ]; then
+    green "BASEROM: ${baserom}"
+else
+    error "BASEROM: Invalid parameter"
+    exit 1
+fi
