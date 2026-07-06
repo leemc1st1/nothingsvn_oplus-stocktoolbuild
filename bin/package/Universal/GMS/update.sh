@@ -1,4 +1,4 @@
-﻿work_dir=$(pwd)
+work_dir=$(pwd)
 source $work_dir/functions.sh
 regionTYPE=$(cat $work_dir/bin/ddevice/rom_region.txt)
 MAIN_FOLDER="$work_dir/build/baserom/images"
