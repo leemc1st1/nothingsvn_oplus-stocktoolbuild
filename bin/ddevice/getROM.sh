@@ -102,7 +102,7 @@ if [ ! -f "${baserom}" ] && [[ "$baserom" == http* ]]; then
         echo "[*] Google Drive file ID: $GDRIVE_ID"
         gdown "$GDRIVE_ID" -O oplusrom.zip
     else
-        aria2c --max-download-limit=1024M --file-allocation=none --summary-interval=10 \
+        aria2c_with_github_token --max-download-limit=1024M --file-allocation=none --summary-interval=10 \
                -x16 -s16 -j5 -o oplusrom.zip "${baserom}"
     fi
 
