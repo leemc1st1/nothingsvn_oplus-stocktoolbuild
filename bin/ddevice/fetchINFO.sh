@@ -127,13 +127,6 @@ echo "$MYNAME" > $work_dir/bin/ddevice/device_name.txt
 echo "$ID" > $work_dir/bin/ddevice/id.txt
 sed -E 's/^.*_([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\(.*$/\1/' $work_dir/bin/ddevice/id.txt > $BUILD_ID
 
-#Information To Script Flash
-echo "$ANDROID_VER" > $work_dir/bin/script2flash/META-INF/Data/AndroidVer
-echo "$DEVICE_MODEL" > $work_dir/bin/script2flash/META-INF/Data/DeviceModel
-echo "$MYNAME" > $work_dir/bin/script2flash/META-INF/Data/DeviceName
-echo "$BRAND_OS" "$BASE_BUILD_ID" > $work_dir/bin/script2flash/META-INF/Data/RomBased
-echo "$BASE_REGION" > $work_dir/bin/script2flash/META-INF/Data/Region
-echo "$ntver" > $work_dir/bin/script2flash/META-INF/Data/Version
 
 find "$dir" -type f \( -name "*_file_contexts" -o -name "*_fs_config" \) | while read -r filepath; do
     for pattern in "${patterns[@]}"; do
@@ -143,17 +136,7 @@ done
 rm -rf $work_dir/build/baserom/images/my_product/media/theme/uxicons/hdpi/com.heytap.yoli
 rm -rf $work_dir/build/baserom/images/my_product/media/theme/uxicons/hdpi/com.tencent.mm
 
-if grep -q "ro.build.ab_update=true" build/baserom/images/vendor/build.prop; then
-echo "VAB" > $work_dir/bin/script2flash/META-INF/Data/Structure
-else
-echo "Non-VAB" > $work_dir/bin/script2flash/META-INF/Data/Structure
-fi
 
-if [ -f $work_dir/build/baserom/images/vendor/etc/init/hw/init.qcom.rc ]; then
-   echo "Snapdragon" > $work_dir/bin/script2flash/META-INF/Data/Chip
-else
-   echo "Mediatek" > $work_dir/bin/script2flash/META-INF/Data/Chip
-fi 
 
 
 main() {
@@ -169,6 +152,7 @@ echo "- Base Region: "$BASE_REGION""
 echo "- Android: "$ANDROID_VER""                                                                                                            
 echo "- SourceBuild Version:"$ntver""
 echo "------------------------------------------------------------------------------------"
+bash $work_dir/bin/ddevice/genInstall.sh
 }
 
 
