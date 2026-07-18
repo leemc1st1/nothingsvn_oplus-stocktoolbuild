@@ -5,7 +5,7 @@ baserom="$1"
 localbuild="$2"
 repo_name="$3"
 prefix_id="$4"
-builder_name="$5"
+export builder_name="$5"
 builder_id="$6"
 work_dir=$(pwd)
 tools_dir=${work_dir}/bin/$(uname)/$(uname -m)export PATH=$(pwd)/bin/$(uname)/$(uname -m)/:$PATH

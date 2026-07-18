@@ -53,9 +53,7 @@ cp -rf $work_dir/bin/script2flash/my_preload.img $work_dir/out/${NTBUILD}_${DEVI
 
 mv -f $work_dir/build/baserom/images/*.img $work_dir/out/${NTBUILD}_${DEVICE_MODEL}_${ANDROID_VER}_OS${BASE_BUILD_ID}/firmware-update/
 
-# generate dynamic script
-cp -rf $work_dir/bin/script2flash/META-INF $work_dir/out/${NTBUILD}_${DEVICE_MODEL}_${ANDROID_VER}_OS${BASE_BUILD_ID}/
-cp -rf $work_dir/bin/script2flash/*.exe $work_dir/out/${NTBUILD}_${DEVICE_MODEL}_${ANDROID_VER}_OS${BASE_BUILD_ID}/
+cp -rf $work_dir/bin/script2flash/*.install $work_dir/out/${NTBUILD}_${DEVICE_MODEL}_${ANDROID_VER}_OS${BASE_BUILD_ID}/
 echo "[SCRIPT] - Done"
 
 if [[ $localbuild != "y" ]]; then
